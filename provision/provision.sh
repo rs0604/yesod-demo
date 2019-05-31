@@ -1,30 +1,29 @@
 #!/bin/sh
 
-lookFile=/home/vagrant/provisioner.lock
-if [ -e $lookFile ]; then
-    exit
-fi
+# mySQLインストール
+yum -y install mysql mysql-devel mysql-server
+# yesod の依存ライブラリインストール
+yum -y zlib-devel pcre-devel
 
-touch $lookFile
+# MySQLの設定
+service mysqld start
 
-# mariaDBとの競合を防ぐため
-yum -y remove mariadb-libs
-rm -rf /var/lib/mysql
-
-# https://dev.mysql.com/downloads/repo/yum/を参照
-yum -y localinstall http://dev.mysql.com/get/mysql57-community-release-el7-11.noarch.rpm
-yum -y install mysql-community-server
-
-# 必要最小限のMySQLの設定内容を書き込む
-cat << __CONF__ >> /etc/my.cnf
-character-set-server = utf8
-default_password_lifetime = 0
-__CONF__
-
-# MySQLの自動起動を有効化し起動する
-systemctl enable mysqld
-systemctl start mysqld
 # 初期パスワードを取得する
-password=`cat /var/log/mysqld.log | grep "A temporary password" | tr ' ' '\n' | tail -n1`
+DB_PASSWORD=$(grep "A temporary password is generated" /var/log/mysqld.log | sed -s 's/.*root@localhost: //')
+mysql -u root -p ${DB_PASSWORD} --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'rsYesodServer_2019'; flush privileges;"
+# "Access denied for user 'myproject'@'localhost' (using password: YES)"}
+mysql -u root -p rsYesodServer_2019 -e "CREATE DATABASE yesod_db CHARACTER SET utf8mb4;"
+mysql -u root -p rsYesodServer_2019 -e "CREATE USER IF NOT EXISTS 'rsyesodserver'@'%' IDENTIFIED BY 'UgwD9_hwn3'"
+# stack のインストール
+curl -sSL https://get.haskellstack.org/ | sh
+export PATH="/usr/local/bin:$PATH"
 
-mysql -u root -p${password} --connect-expired-password < /vagrant/provisioner.sql
+# yesod のインストール
+stack new rsyesodserver yesod-mysql
+cd rsyesodserver
+stack install yesod-bin --install-ghc
+stack build
+
+# yesod 起動
+stack exec -- yesod devel
+
