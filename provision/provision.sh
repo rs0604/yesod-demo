@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 # yesod の依存ライブラリインストール
 yum -y install zlib-devel pcre-devel
 # mySQLインストール
