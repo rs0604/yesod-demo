@@ -14,7 +14,7 @@ DB_PASSWORD=$(grep "A temporary password is generated" /var/log/mysqld.log | sed
 mysql -uroot -p${DB_PASSWORD} --connect-expired-password -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'rsYesodServer_2019'; flush privileges;"
 # "Access denied for user 'myproject'@'localhost' (using password: YES)"}
 mysql -uroot -prsYesodServer_2019 -e "CREATE DATABASE yesod_db CHARACTER SET utf8mb4;"
-mysql -uroot -prsYesodServer_2019 -e "CREATE USER IF NOT EXISTS 'rsyesodserver'@'%' IDENTIFIED BY 'UgwD9_hwn3'"
+mysql -uroot -prsYesodServer_2019 -e "GRANT ALL PRIVILEGES ON yesod_db.* TO 'rsyesodserver'@'%' IDENTIFIED BY 'UgwD9_hwn3'"
 
 service mysqld restart
 
